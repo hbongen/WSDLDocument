@@ -2,24 +2,23 @@
 
 namespace wsdldocument;
 
-use ReflectionClass;
 use DOMDocument;
+use DOMElement;
+use ReflectionClass;
+use ReflectionException;
 use ReflectionMethod;
-use ReflectionProperty;
-
-class WSDLDocumentException extends \Exception{}
 
 /**
  * WSDL document generator.
  *
  * @author  Renan de Lima <renandelima@gmail.com>
- * @version 0.6
+ * @author  Harald Bongen <bongen@fh-aachen.de>
+ *
+ * @version 1.0.0
  */
 class WSDLDocument extends DOMDocument
 {
-    /**#@+
-     * @var string
-     */
+
     const BINDING = 'http://schemas.xmlsoap.org/soap/http';
     const NS_SOAP_ENC = 'http://schemas.xmlsoap.org/soap/encoding/';
     const NS_SOAP_ENV = 'http://schemas.xmlsoap.org/wsdl/soap/';
@@ -29,7 +28,7 @@ class WSDLDocument extends DOMDocument
     /**#@-*/
 
     /**
-     * List of types already created or in creating proccess. It avoids
+     * List of types already created or in creating process. It avoids
      * recursion when creating complex types that reference themselves. See
      * {@link WSDLDocument::createComplexType()} and
      * {@link WSDLDocument::createArrayType()} operations for more details.
@@ -76,18 +75,18 @@ class WSDLDocument extends DOMDocument
     /**
      * Set webservice and url class and target name space.
      *
-     * @param  string
-     * @param  string
-     * @param  string
-     * @return void
+     * @param string $sClass
+     * @param null|string $sUrl
+     * @param null|string $sTns
+     * @throws ReflectionException|WSDLDocumentException
      */
-    public function __construct($sClass, $sUrl = null, $sTns = null)
+    public function __construct(string $sClass, ?string $sUrl = null, ?string $sTns = null)
     {
         parent::__construct('1.0', 'utf-8');
         // set class, url and target namespace
-        $this->oClass = new \ReflectionClass($sClass);
-        $this->sUrl = empty($sUrl) == true ? $this->getDefaultUrl() : $sUrl;
-        $this->sTns = empty($sTns) == true ? $_SERVER['SERVER_NAME'] : $sTns;
+        $this->oClass = new ReflectionClass($sClass);
+        $this->sUrl = empty($sUrl) ? $this->getDefaultUrl() : $sUrl;
+        $this->sTns = empty($sTns) ? $_SERVER['SERVER_NAME'] : $sTns;
         // create document
         $this->run();
     }
@@ -96,8 +95,9 @@ class WSDLDocument extends DOMDocument
      * Create the WSDL definitions.
      *
      * @return void
+     * @throws WSDLDocumentException
      */
-    protected function run()
+    protected function run(): void
     {
         // create root, schema type, port type and binding tags
         $this->createMajorElements();
@@ -105,9 +105,9 @@ class WSDLDocument extends DOMDocument
         foreach ($this->oClass->getMethods() as $oMethod) {
             // check if method is allowed
             if (
-                $oMethod->isPublic() == true && // it must be public and...
-                $oMethod->isStatic() == false && // non static
-                $oMethod->isConstructor() == false && // non constructor
+                $oMethod->isPublic() === true && // it must be public and...
+                $oMethod->isStatic() === false && // non static
+                $oMethod->isConstructor() === false && // non constructor
                 substr($oMethod->name, 0, 2) != '__' // non magic methods
             ) {
                 // attach operation
@@ -127,14 +127,14 @@ class WSDLDocument extends DOMDocument
      * Create array type once. It doesn't create a type, you have to call
      * {@link WSDLDocument::createType()} to this. Returns the array type name.
      *
-     * @param  string
+     * @param string $sType
      * @return string
      */
-    protected function createArrayType($sType)
+    protected function createArrayType(string $sType): string
     {
         // check if it was created
         $sName = $sType . 'Array';
-        if (array_key_exists($sType, $this->aCreatedTypes) == true) {
+        if (array_key_exists($sType, $this->aCreatedTypes)) {
             return $sName;
         }
         // avoid recursion
@@ -162,10 +162,10 @@ class WSDLDocument extends DOMDocument
     /**
      * Create a binding operation tag.
      *
-     * @param  ReflectionMethod
+     * @param ReflectionMethod $oMethod
      * @return void
      */
-    protected function createBindingOperation(ReflectionMethod $oMethod)
+    protected function createBindingOperation(ReflectionMethod $oMethod): void
     {
         $oOperation = $this->createElementNS(self::NS_WSDL, 'operation');
         $oOperation->setAttribute('name', $oMethod->name);
@@ -192,12 +192,14 @@ class WSDLDocument extends DOMDocument
      * Create a complex type once. It doesn't create a type, you have to call
      * {@link WSDLDocument::createType()} to this.
      *
+     * @param $sClass
      * @return void
+     * @throws WSDLDocumentException
      */
-    protected function createComplexType($sClass)
+    protected function createComplexType($sClass): void
     {
         // check if it was created
-        if (array_key_exists($sClass, $this->aCreatedTypes) == true) {
+        if (array_key_exists($sClass, $this->aCreatedTypes)) {
             return;
         }
         // avoid recursion
@@ -209,17 +211,17 @@ class WSDLDocument extends DOMDocument
         $oAll = $this->createElementNS(self::NS_XSD, 'all');
         $oComplex->appendChild($oAll);
         // create attributes
-        $oReflection = new \ReflectionClass($sClass);
-        $aProperty = $oReflection->getProperties(ReflectionProperty::IS_PUBLIC);
+        $oReflection = new ReflectionClass($sClass);
         foreach ($oReflection->getProperties() as $oProperty) {
             // check if property is allowed
             if (
-                $oProperty->isPublic() == true && // it must be public and...
-                $oProperty->isStatic() == false // non static
+                $oProperty->isPublic() === true && // it must be public and...
+                $oProperty->isStatic() === false // non static
             ) {
                 // create type for each element
                 $sComment = $oProperty->getDocComment();
-                $sType = reset($this->getTagComment($sComment, 'var'));
+                $tagComment = $this->getTagComment($sComment, 'var');
+                $sType = reset($tagComment);
                 $sPropertyTypeId = $this->createType($sType);
                 // create element of property
                 $oElement = $this->createElementNS(self::NS_XSD, 'element');
@@ -235,10 +237,11 @@ class WSDLDocument extends DOMDocument
     /**
      * Create a message with operation arguments and return.
      *
-     * @param  ReflectionMethod
+     * @param ReflectionMethod $oMethod
      * @return void
+     * @throws WSDLDocumentException
      */
-    protected function createMessage(ReflectionMethod $oMethod)
+    protected function createMessage(ReflectionMethod $oMethod): void
     {
         $sComment = $oMethod->getDocComment();
         // message input
@@ -264,7 +267,8 @@ class WSDLDocument extends DOMDocument
         $oOutput->setAttribute('name', $oMethod->name . 'Response');
         $this->oDefinitions->appendChild($oOutput);
         // output part
-        $sType = (string) reset($this->getTagComment($sComment, 'return'));
+        $tagComment = $this->getTagComment($sComment, 'return');
+        $sType = (string)reset($tagComment);
         if ($sType != 'void' && $sType != '') {
             $oPart = $this->createElementNS(self::NS_WSDL, 'part');
             $oPart->setAttribute('name', $oMethod->name . 'Return');
@@ -276,10 +280,10 @@ class WSDLDocument extends DOMDocument
     /**
      * Create a port type operation tag.
      *
-     * @param  ReflectionMethod
+     * @param ReflectionMethod $oMethod
      * @return void
      */
-    protected function createPortTypeOperation(ReflectionMethod $oMethod)
+    protected function createPortTypeOperation(ReflectionMethod $oMethod): void
     {
         $oOperation = $this->createElementNS(self::NS_WSDL, 'operation');
         $oOperation->setAttribute('name', $oMethod->name);
@@ -303,7 +307,7 @@ class WSDLDocument extends DOMDocument
      *
      * @return void
      */
-    protected function createService()
+    protected function createService(): void
     {
         $oService = $this->createElementNS(self::NS_WSDL, 'service');
         $oService->setAttribute('name', $this->oClass->name);
@@ -327,13 +331,14 @@ class WSDLDocument extends DOMDocument
      * Create a type in document. Receive the raw type name as it was on
      * programmer's documentation. It returns wsdl name type.
      *
-     * @param  string
+     * @param string $sType
      * @return string
+     * @throws WSDLDocumentException
      */
-    protected function createType($sType)
+    protected function createType(string $sType): string
     {
         // check if is array
-        $sType = trim((string) $sType);
+        $sType = trim($sType);
         if ($sType == '') {
             throw new WSDLDocumentException('Invalid type.');
         }
@@ -344,7 +349,7 @@ class WSDLDocument extends DOMDocument
             $sType = substr($sType, 0, -2);
         }
         // create complex type if necessary
-        $sType      = $this->getType($sType);
+        $sType = $this->getType($sType);
         $sNamespace = $this->getTypeNamespace($sType);
         if ($sNamespace == 'tns') {
             $this->createComplexType($sType);
@@ -366,7 +371,7 @@ class WSDLDocument extends DOMDocument
      *
      * @return string
      */
-    protected function getDefaultUrl()
+    protected function getDefaultUrl(): string
     {
         // protocol
         $sProtocol = $this->getServer('HTTPS') == 'on' ? 'https' : 'http';
@@ -398,24 +403,24 @@ class WSDLDocument extends DOMDocument
     }
 
     /**
-     * @param  string
+     * @param string
      * @return string
      */
-    protected function getServer($sKey)
+    protected function getServer(string $sKey): string
     {
-        return isset($_SERVER[$sKey]) ? $_SERVER[$sKey] : '';
+        return $_SERVER[$sKey] ?? '';
     }
 
     /**
      * Fetch documentation in a comment.
      *
-     * @param  string
+     * @param string $sComment
      * @return string
      */
-    protected function getDocComment($sComment)
+    protected function getDocComment(string $sComment): string
     {
         $sValue = '';
-        foreach (explode("\n",  $sComment) as $sLine) {
+        foreach (explode("\n", $sComment) as $sLine) {
             $sLine = trim($sLine, " *\t\r/");
             if (strlen($sLine) > 0 && $sLine{0} == '@') {
                 break;
@@ -428,14 +433,14 @@ class WSDLDocument extends DOMDocument
     /**
      * Fetch tag's values from a comment.
      *
-     * @param  string
-     * @param  string
+     * @param string $sComment
+     * @param string $sTagName
      * @return string[]
      */
-    protected function getTagComment($sComment, $sTagName)
+    protected function getTagComment(string $sComment, string $sTagName): array
     {
         $aValue = array();
-        foreach (explode("\n",  $sComment) as $sLine) {
+        foreach (explode("\n", $sComment) as $sLine) {
             $sPattern = "/^\*\s+@(.[^\s]+)\s+(.[^\s]+)/";
             $sText = trim($sLine);
             $aMatch = array();
@@ -488,45 +493,53 @@ class WSDLDocument extends DOMDocument
     /**
      * Get type name.
      *
-     * @param  string
+     * @param string $sType
      * @return string
      */
-    protected function getType($sType)
+    protected function getType(string $sType): string
     {
         switch ($sType) {
             case 'array':
             case 'struct':
-                return 'array';
+                $type = 'array';
+                break;
             case 'boolean':
             case 'bool':
-                return 'boolean';
+                $type = 'boolean';
+                break;
             case 'double':
             case 'float':
             case 'real':
-                return 'float';
+                $type = 'float';
+                break;
             case 'integer':
             case 'int':
-                return 'int';
+                $type = 'int';
+                break;
             case 'string':
             case 'str':
-                return 'string';
+                $type = 'string';
+                break;
             default:
-                return $sType;
+                $type = $sType;
+                break;
         }
+        return $type;
     }
 
     /**
      * Get type namespace.
      *
-     * @param  string
+     * @param string $sType
      * @return string
      */
-    protected function getTypeNamespace($sType)
+    protected function getTypeNamespace(string $sType): string
     {
         switch ($sType) {
             case 'array':
             case 'struct':
-                return 'soap-enc';
+                $namespace = 'soap-enc';
+                break;
             case 'boolean':
             case 'bool':
             case 'double':
@@ -536,10 +549,13 @@ class WSDLDocument extends DOMDocument
             case 'int':
             case 'string':
             case 'str':
-                return 'xsd';
+                $namespace = 'xsd';
+                break;
             // complex type, everything else is native type
             default:
-                return 'tns';
+                $namespace = 'tns';
+                break;
         }
+        return $namespace;
     }
 }

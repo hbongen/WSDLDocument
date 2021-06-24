@@ -18,5 +18,7 @@
             "wsdldocument\\": "src/"
         }
     },
-    "require": {}
+    "require": {
+      "ext-dom": "*"
+    }
 }
