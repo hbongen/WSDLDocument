@@ -1,5 +1,10 @@
 <?php
 
+
+require '../vendor/autoload.php';
+
+use wsdldocument\WSDLDocument;
+
 ini_set('error_reporting', E_ALL);
 ini_set('display_errors', 1);
 
@@ -24,7 +29,6 @@ class Math
 
 // ----- USAGE
 
-require '../src/WSDLDocument.php';
 $wsdl = new WSDLDocument('Math');
 header('Content-Type: text/xml');
 echo $wsdl->saveXML();

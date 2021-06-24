@@ -1,24 +1,24 @@
 {
-    "name": "wsdldocument/wsdl-document",
-    "description": "PHP Representation of WSDL Document",
-    "type": "library",
-    "license": "lgpl",
-    "authors": [
-        {
-            "name": "Renan de Lima",
-            "email": "renandelima@gmail.com"
-        },
-        {
-            "name": "Harald Bongen",
-            "email": "bongen@fh-aachen.de"
-        }
-    ],
-    "autoload": {
-        "psr-4": {
-            "wsdldocument\\": "src/"
-        }
+  "name": "wsdldocument/wsdl-document",
+  "description": "PHP Representation of WSDL Document",
+  "type": "library",
+  "license": "lgpl",
+  "authors": [
+    {
+      "name": "Renan de Lima",
+      "email": "renandelima@gmail.com"
     },
-    "require": {
-      "ext-dom": "*"
+    {
+      "name": "Harald Bongen",
+      "email": "bongen@fh-aachen.de"
     }
+  ],
+  "autoload": {
+    "psr-4": {
+      "wsdldocument\\": "src/"
+    }
+  },
+  "require": {
+    "ext-dom": "*"
+  }
 }

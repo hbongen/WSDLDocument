@@ -1,6 +1,5 @@
 <?php
 
-
 require '../vendor/autoload.php';
 
 use wsdldocument\WSDLDocument;
@@ -10,24 +9,27 @@ ini_set('display_errors', 1);
 
 // ----- YOUR APPLICATION DEFINITIONS
 
-class Primes
+class Math
 {
     /**
-     * @param  integer
-     * @return integer[]
+     * @param  float
+     * @param  float
+     * @return float
      */
-    public function find($limit){}
+    public function sum($num0, $num1){}
 
     /**
-     * @param  integer
-     * @param  integer
-     * @return array
+     * @ignoreInWsdL
+     *
+     * @param  float
+     * @param  float
+     * @return float
      */
-    public function set($from, $to){}
+    public function mult($num0, $num1){}
 }
 
 // ----- USAGE
 
-$wsdl = new WSDLDocument('Primes');
+$wsdl = new WSDLDocument('Math');
 header('Content-Type: text/xml');
 echo $wsdl->saveXML();
