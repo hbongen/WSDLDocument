@@ -103,11 +103,14 @@ class WSDLDocument extends DOMDocument
         $this->createMajorElements();
         // add methods
         foreach ($this->oClass->getMethods() as $oMethod) {
+            $sComment = $oMethod->getDocComment();
+            $ignored = empty($this->getTagComment($sComment, 'ignoreInWsdl'));
             // check if method is allowed
             if (
-                $oMethod->isPublic() === true && // it must be public and...
-                $oMethod->isStatic() === false && // non static
-                $oMethod->isConstructor() === false && // non constructor
+                $oMethod->isPublic() && // it must be public and...
+                !$oMethod->isStatic() && // non static
+                !$oMethod->isConstructor() && // non constructor
+                !$ignored && // not ignored by Annotation @ignoreInWsdl
                 substr($oMethod->name, 0, 2) != '__' // non magic methods
             ) {
                 // attach operation
