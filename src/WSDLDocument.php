@@ -104,7 +104,7 @@ class WSDLDocument extends DOMDocument
         // add methods
         foreach ($this->oClass->getMethods() as $oMethod) {
             $sComment = $oMethod->getDocComment();
-            $ignored = empty($this->getTagComment($sComment, 'ignoreInWsdl'));
+            $ignored = !empty($this->getTagComment($sComment, 'ignoreInWsdl'));
             // check if method is allowed
             if (
                 $oMethod->isPublic() && // it must be public and...
@@ -444,12 +444,13 @@ class WSDLDocument extends DOMDocument
     {
         $aValue = array();
         foreach (explode("\n", $sComment) as $sLine) {
-            $sPattern = "/^\*\s+@(.[^\s]+)\s+(.[^\s]+)/";
+            $sPattern = "/^\*\s+@(.[^\s]+)\s*([\S]*[^\s])?/";
             $sText = trim($sLine);
             $aMatch = array();
             preg_match($sPattern, $sText, $aMatch);
             if (count($aMatch) > 2 && $aMatch[1] == $sTagName) {
-                array_push($aValue, $aMatch[2]);
+                //pushes value after annotation or true
+                array_push($aValue, $aMatch[2]?:true);
             }
         }
         return $aValue;
