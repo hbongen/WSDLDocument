@@ -448,7 +448,7 @@ class WSDLDocument extends DOMDocument
             $sText = trim($sLine);
             $aMatch = array();
             preg_match($sPattern, $sText, $aMatch);
-            if (count($aMatch) > 2 && $aMatch[1] == $sTagName) {
+            if (count($aMatch) >= 2 && $aMatch[1] == $sTagName) {
                 //pushes value after annotation or true
                 array_push($aValue, $aMatch[2]?:true);
             }
