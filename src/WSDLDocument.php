@@ -1,6 +1,13 @@
 <?php
 
-class WSDLDocumentException extends Exception{}
+namespace wsdldocument;
+
+use ReflectionClass;
+use DOMDocument;
+use ReflectionMethod;
+use ReflectionProperty;
+
+class WSDLDocumentException extends \Exception{}
 
 /**
  * WSDL document generator.
@@ -78,7 +85,7 @@ class WSDLDocument extends DOMDocument
     {
         parent::__construct('1.0', 'utf-8');
         // set class, url and target namespace
-        $this->oClass = new ReflectionClass($sClass);
+        $this->oClass = new \ReflectionClass($sClass);
         $this->sUrl = empty($sUrl) == true ? $this->getDefaultUrl() : $sUrl;
         $this->sTns = empty($sTns) == true ? $_SERVER['SERVER_NAME'] : $sTns;
         // create document
@@ -202,7 +209,7 @@ class WSDLDocument extends DOMDocument
         $oAll = $this->createElementNS(self::NS_XSD, 'all');
         $oComplex->appendChild($oAll);
         // create attributes
-        $oReflection = new ReflectionClass($sClass);
+        $oReflection = new \ReflectionClass($sClass);
         $aProperty = $oReflection->getProperties(ReflectionProperty::IS_PUBLIC);
         foreach ($oReflection->getProperties() as $oProperty) {
             // check if property is allowed
