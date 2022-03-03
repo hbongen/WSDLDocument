@@ -425,7 +425,7 @@ class WSDLDocument extends DOMDocument
         $sValue = '';
         foreach (explode("\n", $sComment) as $sLine) {
             $sLine = trim($sLine, " *\t\r/");
-            if (strlen($sLine) > 0 && $sLine{0} == '@') {
+            if (strlen($sLine) > 0 && $sLine[0] == '@') {
                 break;
             }
             $sValue .= ' ' . $sLine;
